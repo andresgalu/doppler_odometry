@@ -1,0 +1,21 @@
+<launch>
+  <node name="doppler_odometry" pkg="doppler_odometry" type="doppler_odometry_node" output="screen" />
+  
+  <param name="verbose" value="true" />
+  <param name="input_topic" value="/hugin_raf_1/radar_data" />
+  
+  <param name="tf_from_frame" value="/odom" />
+  <param name="tf_to_frame" value="/test/base_link" />
+  
+  <rosparam param="initial_pose"> [0., 1., 0., 0., -1., 0.,  0., 0., 0., 0.,  1., 0., 0., 0.,  0., 1.] </rosparam>
+  <!--rosparam param="initial_pose"> [1., 0., 0., 0., 0., 1.,  0., 0., 0., 0.,  1., 0., 0., 0.,  0., 1.] </rosparam-->
+  <rosparam param="sensor_pose"> [0.85, 0.22, 0.17, 0.6857716483037417, 0.7276229492792916, 0.012222542255175764, 0.011519528015294512] </rosparam>
+  <rosparam param="calib_rot"> [-0.00295514, -0.01095426, 0.01718881, 0.99978789] </rosparam>			    
+  <param name="sensor_to_icr_x" value="-0.9944683540059478" />
+  
+  <param name="min_points" value="50" />
+  <param name="use_power" value="true" />
+  <param name="threshold_mode" value="ransac" />
+  <param name="threshold_value" value="0.045" />
+  
+</launch>
