@@ -60,7 +60,7 @@ class OdometryWorker : public Odometry
 	//------------------------------------
 	// PUBLISHER
 	//------------------------------------
-	// Publish world - radar TF and odometry to display point cloud in rviz
+	// Publish world - radar TF and odometry
 	void publish(const std_msgs::Header & header, const Matrix4d & pose)
 	{	
 		static tf2_ros::TransformBroadcaster tf_broadcaster;
@@ -81,9 +81,25 @@ class OdometryWorker : public Odometry
 		tf_msg.transform.rotation.y = q.y();
 		tf_msg.transform.rotation.z = q.z();
 		tf_msg.transform.rotation.w = q.w();
+		
+		// Create odometry message
+		auto odom_msg = nav_msgs::Odometry();
+			// Set header
+		odom_msg.header = header;
+		odom_msg.header.frame_id = tf_from_frame;
+		odom_msg.child_frame_id = tf_to_frame;
+			// Set pose as above
+		odom_msg.pose.pose.position.x = pose(0,3);
+		odom_msg.pose.pose.position.y = pose(1,3);
+		odom_msg.pose.pose.position.z = pose(2,3);
+		odom_msg.pose.pose.orientation.x = q.x();
+		odom_msg.pose.pose.orientation.y = q.y();
+		odom_msg.pose.pose.orientation.z = q.z();
+		odom_msg.pose.pose.orientation.w = q.w();
 
 		// Publish
 		tf_broadcaster.sendTransform(tf_msg);
+		odom_pub_->publish(odom_msg);
 	}
 
 	//------------------------------------
@@ -173,6 +189,9 @@ class OdometryWorker : public Odometry
 	// Variables
 	string tf_from_frame = "/odom";
 	string tf_to_frame = "/base_link";
+	
+	// Publisher
+	ros::Publisher const * odom_pub_;
 };
 
 
@@ -249,6 +268,10 @@ int main(int argc, char **argv)
 	else if (verbose)
 		cout << "Initial pose not set because of wrong input size" << endl;
 		
+		
+	// Set publisher
+	ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("/doppler_odom", 1000);
+	worker.odom_pub_ = &odom_pub;
 		
 	// Subscribe to input topic and spin
 	ros::Subscriber sub = n.subscribe(input_topic, 100, &OdometryWorker::callback, &worker);

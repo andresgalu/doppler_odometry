@@ -4,8 +4,8 @@
   <param name="verbose" value="true" />
   <param name="input_topic" value="/hugin_raf_1/radar_data" />
   
-  <param name="tf_from_frame" value="/odom" />
-  <param name="tf_to_frame" value="/test/base_link" />
+  <param name="tf_from_frame" value="odom" />
+  <param name="tf_to_frame" value="base_link" />
   
   <rosparam param="initial_pose"> [0., 1., 0., 0., -1., 0.,  0., 0., 0., 0.,  1., 0., 0., 0.,  0., 1.] </rosparam>
   <!--rosparam param="initial_pose"> [1., 0., 0., 0., 0., 1.,  0., 0., 0., 0.,  1., 0., 0., 0.,  0., 1.] </rosparam-->
