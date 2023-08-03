@@ -87,9 +87,21 @@ void Odometry::odometryDopplerOnly()
 	// Calculate angular velocities
 	double w_z = -sensor_vel(1) / x_diff;
 	double w_y = sensor_vel(2) / x_diff;
+	ang_vel << 0., w_y, w_z;
 	if (verbose)
 		cout << "Angular velocities: " << rad2deg(w_y) << "º, "
 									<< rad2deg(w_z) << "º" << endl << endl;
+									
+	// Calculate their covariance matrix
+	Matrix3d Jac = Matrix3d::Zero();
+	Jac << 0., 0., 0.,
+			0., 0., 1./x_diff,
+			0., -1./x_diff, 0.;
+			
+	ang_cov = Jac * dopp_cov * Jac.transpose();
+	
+	if (verbose)
+		cout << "Angular velocity covariance: " << endl << ang_cov << endl;
 
 	// Time elapsed for angular velocity estimation
 	time_points.measure();
@@ -101,12 +113,10 @@ void Odometry::odometryDopplerOnly()
 
 	// Obtain rotation
 	double time_diff = double(curr_stamp - prev_stamp) * 1e-9;
-	Vector3d axis;
-	axis << 0., w_y, w_z;
-	double angle = axis.norm() * time_diff;
+	double angle = ang_vel.norm() * time_diff;
 	
 	// Velocity of base
-	Vector3d base_vel = sensor_vel - axis.cross(sensor_pos);
+	Vector3d base_vel = sensor_vel - ang_vel.cross(sensor_pos);
 	
 	if (verbose)
 		cout << "Velocity of the base: " << base_vel.transpose() << endl;
@@ -120,7 +130,7 @@ void Odometry::odometryDopplerOnly()
 	// Create transform
 	transform.setIdentity();
 	transform.block<3,1>(0,3) = trans;
-	transform.block<3,3>(0,0) = AngleAxisd(angle, axis.normalized()).toRotationMatrix();
+	transform.block<3,3>(0,0) = AngleAxisd(angle, ang_vel.normalized()).toRotationMatrix();
 
 	// Update pose
 	pose *= transform;

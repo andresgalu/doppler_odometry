@@ -47,6 +47,10 @@ public:
 	// Doppler velocity
 	Eigen::Vector3d dopp_vel;
 	Eigen::Matrix3d dopp_cov;
+	
+	// Angular velocity
+	Eigen::Vector3d ang_vel;
+	Eigen::Matrix3d ang_cov;
 
 	// Data matrices
 	RadarData data;

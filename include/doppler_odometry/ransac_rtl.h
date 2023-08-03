@@ -8,8 +8,8 @@
 
 // Define types
 typedef Eigen::Vector3d 				model_t;
-typedef Eigen::Vector4d					datum_t;
-typedef std::vector<Eigen::Vector4d>	data_t;
+typedef Eigen::Matrix<double, 5, 1>		datum_t;
+typedef std::vector<datum_t>			data_t;
 
 // Create templated class for RANSAC Doppler velocity and segmentation
 class DopplerEstimator : virtual public RTL::Estimator<model_t, datum_t, data_t>
@@ -20,17 +20,19 @@ public:
 		// Build Ax = B problem
 		Eigen::MatrixXd A(samples.size(), 3);
 		Eigen::MatrixXd B(samples.size(), 1);
+		Eigen::DiagonalMatrix<double, Eigen::Dynamic> W(samples.size());
 		int i = 0;
 		for (auto itr = samples.begin(); itr != samples.end(); ++itr, ++i)
 		{
 			const datum_t & datum = data[*itr];
 			A.row(i) << datum(0), datum(1), datum(2);
 			B.row(i) << datum(3);
+			W.diagonal()(i) = datum(4);
 		}
 
 		// Solve it
 		model_t velocity;
-		velocity = (A.transpose() * A).ldlt().solve(A.transpose() * B);
+		velocity = (A.transpose() * W * A).ldlt().solve(A.transpose() * W * B);
 
 		return velocity;
 	}

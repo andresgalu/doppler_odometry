@@ -14,13 +14,16 @@ using namespace Eigen;
 void Odometry::dopplerVelocityRansac(RadarData & data, Vector3d & vel, Matrix3d & covar)
 {
 	// Create RANSAC problem
-	std::vector<Vector4d> ransac_data;
+	data_t ransac_data;					// From ransac_rtl.h: std::vector<Eigen::Vector5d>
 	std::vector<int> ransac_inliers;
 	for (int i=0; i<data.inliers.rows(); ++i)
 	{
-		Vector4d datum;
+		datum_t datum;					// From ransac_rtl.h: Eigen::Vector5d 
+		double w = 1.;
+		if (use_power)
+			w = data.power(i);
 		double phi = data.spher(i, 1), the = data.spher(i, 2);
-		datum << sin(phi)*cos(the), cos(phi)*cos(the), sin(the), -data.doppler(i);
+		datum << sin(phi)*cos(the), cos(phi)*cos(the), sin(the), -data.doppler(i), w;
 		ransac_data.push_back(datum);
 	}
 	
@@ -32,8 +35,29 @@ void Odometry::dopplerVelocityRansac(RadarData & data, Vector3d & vel, Matrix3d 
 	for (int i=0; i<ransac_inliers.size(); ++i)
 		data.inliers(ransac_inliers[i]) = true;
 		
-	// Covariance (TODO)
-	covar.setZero();
+	// Covariance
+		// Set matrices
+	MatrixXd A(ransac_inliers.size(), 3);
+	MatrixXd B(ransac_inliers.size(), 1);
+	DiagonalMatrix<double, Dynamic> W(ransac_inliers.size());
+	for (int i=0; i<ransac_inliers.size(); ++i)
+	{
+		int idx = ransac_inliers[i];
+		A.row(i) << ransac_data[idx].head(3);
+		B.row(i) << ransac_data[idx](3);
+		W.diagonal()(i) = ransac_data[idx](4);
+	}
+		
+		// Obtain residuals and sigma
+	MatrixXd residuals(ransac_inliers.size(), 1);
+	residuals = A * vel - B;
+	double sigma = (residuals.transpose() * W * residuals).sum();
+	//MatrixXd H = A * (A.transpose() * A).inverse() * A.transpose();
+	//sigma /= ransac_inliers.size() - 1.25*H.trace() + 0.5;
+	sigma /= ransac_inliers.size() - 3;
+	
+		// Propagate sigma to covariance
+	covar = sigma * (A.transpose() * W * A).inverse();
 }
 
 void Odometry::dopplerVelocityTls(RadarData & data, Vector3d & vel, Matrix3d & covar)
@@ -114,6 +138,8 @@ void Odometry::dopplerVelocityTls(RadarData & data, Vector3d & vel, Matrix3d & c
 	}
 
 	// Calculate covariance matrix
+	//MatrixXd H = A * (A.transpose() * A).inverse() * A.transpose();
+	//double sigma = (res.matrix().transpose() * W * res.matrix()).sum() / (data.inliers.count() - 1.25*H.trace() + 0.5);
 	double sigma = (res.matrix().transpose() * W * res.matrix()).sum() / (cloud_size - 3.);
 	covar = sigma * (A.transpose() * W * A).inverse();
 }
