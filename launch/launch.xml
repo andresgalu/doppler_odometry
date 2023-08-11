@@ -17,7 +17,7 @@
   <param name="use_power" value="true" />
   <param name="threshold_mode" value="ransac" />
   <param name="threshold_value" value="0.045" />
-  <param name="max_linear_vel" value="2." />
+  <param name="max_linear_vel" value="1.5" />
   <param name="max_ang_vel" value="2." />
   
 </launch>
