@@ -82,7 +82,7 @@ void Odometry::odometryDopplerOnly()
 	// Transform frame of reference (set to base_link)
 	Vector3d sensor_vel = calib_rot._transformVector(sensor_rot._transformVector(vel));
 	if (verbose)
-		cout << "Sensor velocity (rotated and calibrated calibration): " << sensor_vel.transpose() << endl;
+		cout << "Sensor velocity (rotated and calibrated): " << sensor_vel.transpose() << endl;
 
 	// Calculate angular velocities
 	double w_z = -sensor_vel(1) / x_diff;
@@ -126,6 +126,19 @@ void Odometry::odometryDopplerOnly()
 	
 	if (verbose)
 		cout << "Translation: " << trans.transpose() << endl;
+		
+	// Check if inside limits
+	if (base_vel.norm() > max_linear_vel || ang_vel.norm() > max_ang_vel)
+	{
+		if (verbose)
+			cout << "Pose updated with last value because velocity is outside limits." << endl; 
+			
+		// Update pose
+		pose *= transform;
+		
+		time_points.measure();
+		return;
+	}
 
 	// Create transform
 	transform.setIdentity();

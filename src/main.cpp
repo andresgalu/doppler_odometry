@@ -1,5 +1,6 @@
 // C++
 #include <chrono>
+#include <fstream>
 
 // ROS
 #include <ros/ros.h>
@@ -28,7 +29,10 @@ class OdometryWorker : public Odometry
 	public:
 	
 	// Constructor
-	OdometryWorker() {}
+	OdometryWorker() 
+	{
+		outfile.open("/home/andres/catkin_mro/src/doppler_odometry/results/odom.csv");
+	}
   
   	//------------------------------------
 	// POINT CLOUD PARSER
@@ -150,6 +154,12 @@ class OdometryWorker : public Odometry
 		// --------------------------
 		// Publish pose
 		publish(msg->header, pose);
+		
+		// Write pose
+		Quaterniond q(pose.block<3,3>(0,0));
+		outfile << msg->header.stamp.sec << "," << msg->header.stamp.nsec << ",";
+		outfile << pose(0,3) << "," << pose(1,3) << "," << pose(2,3) << ",";
+		outfile << q.x() << "," << q.y() << "," << q.z() << "," << q.w() << "\n";
 
 
 		// TIME STATS
@@ -192,6 +202,9 @@ class OdometryWorker : public Odometry
 	
 	// Publisher
 	ros::Publisher const * odom_pub_;
+	
+	// Writer
+	std::ofstream outfile;
 };
 
 
@@ -260,6 +273,8 @@ int main(int argc, char **argv)
 	checkGetParam(n, "use_power", worker.use_power);
 	checkGetParam(n, "threshold_mode", worker.threshold_mode);
 	checkGetParam(n, "threshold_value", worker.threshold_value);
+	checkGetParam(n, "max_linear_vel", worker.max_linear_vel);
+	checkGetParam(n, "max_ang_vel", worker.max_ang_vel);
 		// Initial pose
 	vector<double> init_pose;
 	checkGetParam(n, "initial_pose", init_pose);

@@ -29,6 +29,8 @@ public:
 	std::string threshold_mode = "percent"; // percent, mad, fixed, ransac
 	double threshold_value = 0.7;
 	double length_between_wheels = 0.505;	// Husky
+	double max_linear_vel = 1.5;
+	double max_ang_vel = 1.5;
 	
 	// Calibration parameters
 	Eigen::Vector3d sensor_pos = Eigen::Vector3d::Zero();
