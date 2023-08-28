@@ -20,4 +20,9 @@
   <param name="max_linear_vel" value="1.5" />
   <param name="max_ang_vel" value="2." />
   
+  <param name="velocity_file" value="/home/andres/catkin_mro/src/doppler_odometry/results/sensor_vels.dat" />
+  <param name="odometry_file" value="/home/andres/catkin_mro/src/doppler_odometry/results/odom.csv" />
+  
+  <param name="filtered_points_topic" value="/filtered_points" />
+  
 </launch>

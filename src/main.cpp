@@ -29,11 +29,7 @@ class OdometryWorker : public Odometry
 	public:
 	
 	// Constructor
-	OdometryWorker() 
-	{
-		outfile.open("/home/andres/catkin_mro/src/doppler_odometry/results/odom.csv");
-		velfile.open("/home/andres/catkin_mro/src/doppler_odometry/results/sensor_vels.dat");
-	}
+	OdometryWorker() {}
   
   	//------------------------------------
 	// POINT CLOUD PARSER
@@ -66,7 +62,7 @@ class OdometryWorker : public Odometry
 	// PUBLISHER
 	//------------------------------------
 	// Publish world - radar TF and odometry
-	void publish(const std_msgs::Header & header, const Matrix4d & pose)
+	void publishPose(const std_msgs::Header & header, const Matrix4d & pose)
 	{	
 		static tf2_ros::TransformBroadcaster tf_broadcaster;
 	
@@ -106,6 +102,69 @@ class OdometryWorker : public Odometry
 		tf_broadcaster.sendTransform(tf_msg);
 		odom_pub_->publish(odom_msg);
 	}
+	
+	// Publish point cloud without outliers (RANSAC)
+	void publishPoints(const std_msgs::Header & header)
+	{	
+		int numpoints = data.inliers.count();
+		if (numpoints == 0)
+			return;
+		
+		// Create cloud
+		sensor_msgs::PointCloud2 cloud;
+		cloud.header = header;
+		cloud.width  = numpoints;
+		cloud.height = 1;
+		cloud.is_bigendian = false;
+		cloud.is_dense = false;
+		
+		// Setup fields
+		sensor_msgs::PointCloud2Modifier modifier(cloud);
+		modifier.setPointCloud2Fields(8, "x", 1, sensor_msgs::PointField::FLOAT32,
+										 "y", 1, sensor_msgs::PointField::FLOAT32,
+										 "z", 1, sensor_msgs::PointField::FLOAT32,
+										 "range", 1, sensor_msgs::PointField::FLOAT32,
+										 "elevation", 1, sensor_msgs::PointField::FLOAT32,
+										 "azimuth", 1, sensor_msgs::PointField::FLOAT32,
+										 "power", 1, sensor_msgs::PointField::FLOAT32,
+										 "doppler", 1, sensor_msgs::PointField::FLOAT32);
+		modifier.resize(numpoints);
+		
+		// Create iterators (all fields are type 7 = float32)
+		sensor_msgs::PointCloud2Iterator<float> it_xyz(cloud, "x");
+		sensor_msgs::PointCloud2Iterator<float> it_sph(cloud, "range");
+		sensor_msgs::PointCloud2Iterator<float> it_pow(cloud, "power");
+		sensor_msgs::PointCloud2Iterator<float> it_dop(cloud, "doppler");
+		
+		// Go through all points
+		for (int i=0; i<data.inliers.size(); ++i)
+		{
+			// Fill each inlier point in the message
+			if (data.inliers(i))
+			{
+				it_xyz[0] = data.points(i, 0);
+				it_xyz[1] = data.points(i, 1);
+				it_xyz[2] = data.points(i, 2);
+				
+				it_sph[0] = data.spher(i, 0);
+				it_sph[1] = data.spher(i, 2);
+				it_sph[2] = data.spher(i, 1);
+				
+				it_pow[0] = data.power(i);
+				it_dop[0] = data.doppler(i);
+			
+				// Increase iterators
+				++it_xyz;
+				++it_sph;
+				++it_pow;
+				++it_dop;
+			}
+		}
+		
+		// Publish
+		points_pub_->publish(cloud);
+	}
+
 
 	//------------------------------------
 	// CALLBACK
@@ -154,21 +213,32 @@ class OdometryWorker : public Odometry
 		// PUBLISH AND WRITE
 		// --------------------------
 		// Publish pose
-		publish(msg->header, pose);
+		publishPose(msg->header, pose);
+		
+		// Publish cloud
+		if (points_pub_ != NULL)
+			publishPoints(msg->header);
 		
 		// Write pose
-		Quaterniond q(pose.block<3,3>(0,0));
-		outfile << msg->header.stamp.sec << "," << msg->header.stamp.nsec << ",";
-		outfile << pose(0,3) << "," << pose(1,3) << "," << pose(2,3) << ",";
-		outfile << q.x() << "," << q.y() << "," << q.z() << "," << q.w() << "\n";
+		if (outfile.is_open())
+		{
+			Quaterniond q(pose.block<3,3>(0,0));
+			outfile << msg->header.stamp.sec << "," << msg->header.stamp.nsec << ",";
+			outfile << pose(0,3) << "," << pose(1,3) << "," << pose(2,3) << ",";
+			outfile << q.x() << "," << q.y() << "," << q.z() << "," << q.w() << "\n";
+		}
+		
 		
 		// Write sensor velocity
-		velfile << curr_stamp << ", ";
-		velfile << dopp_vel(0) << ", " << dopp_vel(1) << ", " << dopp_vel(2) << ", ";
-		velfile << dopp_cov(0,0) << ", " << dopp_cov(0,1) << ", " << dopp_cov(0,2) << ", ";
-		velfile << dopp_cov(1,0) << ", " << dopp_cov(1,1) << ", " << dopp_cov(1,2) << ", ";
-		velfile << dopp_cov(2,0) << ", " << dopp_cov(2,1) << ", " << dopp_cov(2,2) << ", ";
-		velfile << 1. << ", " << 1. << "\n";
+		if (velfile.is_open())
+		{
+			velfile << curr_stamp << ", ";
+			velfile << dopp_vel(0) << ", " << dopp_vel(1) << ", " << dopp_vel(2) << ", ";
+			velfile << dopp_cov(0,0) << ", " << dopp_cov(0,1) << ", " << dopp_cov(0,2) << ", ";
+			velfile << dopp_cov(1,0) << ", " << dopp_cov(1,1) << ", " << dopp_cov(1,2) << ", ";
+			velfile << dopp_cov(2,0) << ", " << dopp_cov(2,1) << ", " << dopp_cov(2,2) << ", ";
+			velfile << 1. << ", " << 1. << "\n";
+		}
 
 
 		// TIME STATS
@@ -209,8 +279,9 @@ class OdometryWorker : public Odometry
 	string tf_from_frame = "/odom";
 	string tf_to_frame = "/base_link";
 	
-	// Publisher
+	// Publishers
 	ros::Publisher const * odom_pub_;
+	ros::Publisher const * points_pub_;
 	
 	// Writer
 	std::ofstream outfile;
@@ -292,9 +363,30 @@ int main(int argc, char **argv)
 		worker.pose = Eigen::Map<Matrix4d>(init_pose.data());
 	else if (verbose)
 		cout << "Initial pose not set because of wrong input size" << endl;
+		// Save velocity values
+	string vel_file_name;
+	checkGetParam(n, "velocity_file", vel_file_name);
+	if (vel_file_name.size() > 5)
+		 worker.velfile.open(vel_file_name);
+		// Save odometry
+	string odom_file_name;
+	checkGetParam(n, "odometry_file", odom_file_name);
+	if (odom_file_name.size() > 5)
+		 worker.outfile.open(odom_file_name);
+		 // Publish filtered point cloud
+	string points_topic;
+	ros::Publisher points_pub;
+	checkGetParam(n, "filtered_points_topic", points_topic);
+	if (points_topic.size() > 1)
+	{	 
+		points_pub = n.advertise<sensor_msgs::PointCloud2>(points_topic, 100);
+		worker.points_pub_ = &points_pub;
+	}
+	else
+		worker.points_pub_ = NULL;
 		
 		
-	// Set publisher
+	// Set publishers
 	ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("/doppler_odom", 1000);
 	worker.odom_pub_ = &odom_pub;
 		
