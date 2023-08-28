@@ -32,6 +32,7 @@ class OdometryWorker : public Odometry
 	OdometryWorker() 
 	{
 		outfile.open("/home/andres/catkin_mro/src/doppler_odometry/results/odom.csv");
+		velfile.open("/home/andres/catkin_mro/src/doppler_odometry/results/sensor_vels.dat");
 	}
   
   	//------------------------------------
@@ -160,6 +161,14 @@ class OdometryWorker : public Odometry
 		outfile << msg->header.stamp.sec << "," << msg->header.stamp.nsec << ",";
 		outfile << pose(0,3) << "," << pose(1,3) << "," << pose(2,3) << ",";
 		outfile << q.x() << "," << q.y() << "," << q.z() << "," << q.w() << "\n";
+		
+		// Write sensor velocity
+		velfile << curr_stamp << ", ";
+		velfile << dopp_vel(0) << ", " << dopp_vel(1) << ", " << dopp_vel(2) << ", ";
+		velfile << dopp_cov(0,0) << ", " << dopp_cov(0,1) << ", " << dopp_cov(0,2) << ", ";
+		velfile << dopp_cov(1,0) << ", " << dopp_cov(1,1) << ", " << dopp_cov(1,2) << ", ";
+		velfile << dopp_cov(2,0) << ", " << dopp_cov(2,1) << ", " << dopp_cov(2,2) << ", ";
+		velfile << 1. << ", " << 1. << "\n";
 
 
 		// TIME STATS
@@ -205,6 +214,7 @@ class OdometryWorker : public Odometry
 	
 	// Writer
 	std::ofstream outfile;
+	std::ofstream velfile;
 };
 
 
