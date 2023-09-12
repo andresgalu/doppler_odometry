@@ -147,9 +147,9 @@ public:
         return data;
     }
 
-    const Point RANGE_MIN;
-
     const Point RANGE_MAX;
+
+    const Point RANGE_MIN;
 };
 
 #endif // End of '__RTL_LINE__'
