@@ -29,7 +29,8 @@ class OdometryWorker : public Odometry
 	public:
 	
 	// Constructor
-	OdometryWorker() {}
+	OdometryWorker() 
+	{}
   
   	//------------------------------------
 	// POINT CLOUD PARSER
@@ -210,6 +211,33 @@ class OdometryWorker : public Odometry
 		}
 
 
+		// TIME STATS
+		// --------------------------
+		// Average execution time update
+		double exec_time = time_points.total_time();
+		vector<double> breakdown = time_points.breakdown();
+		Map<ArrayXd> elapsed(breakdown.data(), breakdown.size());
+		if (number_frames == 0)
+			avg_elapsed = elapsed;
+		avg_exec_time = (avg_exec_time*number_frames + exec_time)/(number_frames+1);
+		avg_elapsed = (avg_elapsed*number_frames + elapsed) / (number_frames+1);
+		
+		// Display
+		if (verbose)
+		{
+			// Execution time
+			cout << "\nExecution time: " << exec_time;
+			cout << "\nTiming breakdown: \n";
+			cout << elapsed << endl;
+
+			// Average execution time
+			cout << "\nAverage execution time: " << avg_exec_time;
+			cout << "\nBreakdown of average: \n" << avg_elapsed;
+			cout << endl << endl;
+		}
+		
+
+
 		// PUBLISH AND WRITE
 		// --------------------------
 		// Publish pose
@@ -238,32 +266,6 @@ class OdometryWorker : public Odometry
 			velfile << dopp_cov(1,0) << ", " << dopp_cov(1,1) << ", " << dopp_cov(1,2) << ", ";
 			velfile << dopp_cov(2,0) << ", " << dopp_cov(2,1) << ", " << dopp_cov(2,2) << ", ";
 			velfile << 1. << ", " << 1. << "\n";
-		}
-
-
-		// TIME STATS
-		// --------------------------
-		// Average execution time update
-		double exec_time = time_points.total_time();
-		vector<double> breakdown = time_points.breakdown();
-		Map<ArrayXd> elapsed(breakdown.data(), breakdown.size());
-		if (number_frames == 0)
-			avg_elapsed = elapsed;
-		avg_exec_time = (avg_exec_time*number_frames + exec_time)/(number_frames+1);
-		avg_elapsed = (avg_elapsed*number_frames + elapsed) / (number_frames+1);
-		
-		// Display
-		if (verbose)
-		{
-			// Execution time
-			cout << "\nExecution time: " << exec_time;
-			cout << "\nTiming breakdown: \n";
-			cout << elapsed << endl;
-
-			// Average execution time
-			cout << "\nAverage execution time: " << avg_exec_time;
-			cout << "\nBreakdown of average: \n" << avg_elapsed;
-			cout << endl << endl;
 		}
 
 

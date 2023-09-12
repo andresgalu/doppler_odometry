@@ -1,7 +1,7 @@
 <launch>
   <node name="doppler_odometry" pkg="doppler_odometry" type="doppler_odometry_node" output="screen" />
   
-  <param name="verbose" value="true" />
+  <param name="verbose" value="false" />
   <param name="input_topic" value="/hugin_raf_1/radar_data" />
   
   <param name="tf_from_frame" value="odom" />
@@ -20,8 +20,8 @@
   <param name="max_linear_vel" value="1.5" />
   <param name="max_ang_vel" value="2." />
   
-  <param name="velocity_file" value="/home/andres/catkin_mro/src/doppler_odometry/results/sensor_vels.dat" />
-  <param name="odometry_file" value="/home/andres/catkin_mro/src/doppler_odometry/results/odom.csv" />
+  <param name="velocity_file" value="" />
+  <param name="odometry_file" value="" />
   
   <param name="filtered_points_topic" value="/filtered_points" />
   

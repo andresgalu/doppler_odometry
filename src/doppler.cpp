@@ -52,8 +52,6 @@ void Odometry::dopplerVelocityRansac(RadarData & data, Vector3d & vel, Matrix3d 
 	MatrixXd residuals(ransac_inliers.size(), 1);
 	residuals = A * vel - B;
 	double sigma = (residuals.transpose() * W * residuals).sum();
-	//MatrixXd H = A * (A.transpose() * A).inverse() * A.transpose();
-	//sigma /= ransac_inliers.size() - 1.25*H.trace() + 0.5;
 	sigma /= ransac_inliers.size() - 3;
 	
 		// Propagate sigma to covariance
@@ -138,8 +136,6 @@ void Odometry::dopplerVelocityTls(RadarData & data, Vector3d & vel, Matrix3d & c
 	}
 
 	// Calculate covariance matrix
-	//MatrixXd H = A * (A.transpose() * A).inverse() * A.transpose();
-	//double sigma = (res.matrix().transpose() * W * res.matrix()).sum() / (data.inliers.count() - 1.25*H.trace() + 0.5);
 	double sigma = (res.matrix().transpose() * W * res.matrix()).sum() / (cloud_size - 3.);
 	covar = sigma * (A.transpose() * W * A).inverse();
 }
