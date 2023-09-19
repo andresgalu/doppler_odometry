@@ -1,7 +1,17 @@
 ## Doppler-only Single-scan 3D Vehicle Odometry
-This package estimates the motion of a vehicle based on the radial velocity measurements from a Doppler-capable sensor. 
+
+This ROS node estimates the 3D odometry of a vehicle using the radial velocities provided by a Doppler-capable sensor. First, the velocity of the sensor is estimated from the sensed radial velocities from the scene. Then, the kinematic model of the vehicle provides the relation between the obtained sensor velocity and the vehicle velocity (both linear and angular). The algorithm is based on the following assumptions:
+
+* Majority of the observed points belong to static objects.
+* Sensor is calibrated so that the X, Y, and Z axes point forward, left, and upwards, respectively.
+* Vehicle moves without roll rotation (around X axis).
+* ICR related to yaw rotation is consistently found in a line parallel to the Y axis (Ackermann, skid-steer and differential drive fulfill this hypothesis).
+* Vertical curvature of the ground is constant in the relatively small distance between wheel axes.
 
 ## Launch parameters
+
+Please launch the node using a launch file to correctly set the different parameters:
+
 * ``verbose``: whether the node should output execution information to console or not.
 * ``input_topic``: the ``sensor_msg::PointCloud2`` topic to subscribe to. It should have the following ``float32`` fields in the same order: ``x``, ``y``, ``z``, ``range``, ``elevation``, ``azimuth``, ``power``, ``doppler``.
 * ``tf_from_frame`` and ``tf_to_frame``: the tf frames where the ``geometry_msgs::TransformStamped`` and ``nav_msg::Odometry`` messages should point to. ``from`` becomes the ``tf.header.frame_id``, and ``to`` becomes ``tf.child_frame_id``.
@@ -23,6 +33,8 @@ This package estimates the motion of a vehicle based on the radial velocity meas
 * ``odometry_file``: file name where the estimated odometry should be written. The format is timestamp (seconds, nanoseconds), position (x, y, z), orientation quaternion (x, y, z, w). Leave empty so it does not write the file.
 * ``filtered_points_topic``: topic name where the filtered point cloud should be published, outliers are discarded.
   
+## Dataset
+The associated dataset can be found [here](https://zenodo.org/record/8346769).
 
 ## Reference
-* TODO
+The paper titled 'Doppler-only Single-scan 3D Vehicle Odometry' is under review for publication.
