@@ -37,4 +37,4 @@ Please launch the node using a launch file to correctly set the different parame
 The associated dataset can be found [here](https://zenodo.org/record/8346769).
 
 ## Reference
-The paper titled 'Doppler-only Single-scan 3D Vehicle Odometry' is under review for publication.
+The paper titled 'Doppler-only Single-scan 3D Vehicle Odometry' is under review for publication. See the submitted version [here](https://arxiv.org/abs/2310.04113).
